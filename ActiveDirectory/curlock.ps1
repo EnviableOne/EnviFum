@@ -1,0 +1,3 @@
+﻿Function curlock{
+ Search-ADAccount -u -l | Select -property sAMAccountName | foreach{ Get-ADUser -Identity $_.sAMAccountName -Properties lockoutTime} | select sAMAccountName,givenName,Surname,lockouttime | Format-table @{name='Username';Expression={$_. sAMAccountName}},@{name='Forename';Expression={$_.givenName}},Surname,@{Name='LockedSince';Expression={Get-date($_.lockouttime)-UFormat %x-%T}} | sort LockedSince 
+ }

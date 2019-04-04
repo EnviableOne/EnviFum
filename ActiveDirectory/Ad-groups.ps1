@@ -1,0 +1,1 @@
+﻿get-ADUser -LDAPFilter "(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.804:=2))(description=*Group Account*))" -Properties sAMAccountName | Add-ADPrincipalGroupMembership -memberOf "Generic Accounts - DGG"
