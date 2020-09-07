@@ -1,4 +1,4 @@
-﻿Function Get-MD4Hash
+Function Get-MD4Hash
 {
 <#
 .SYNOPSIS
@@ -39,7 +39,9 @@
 #>
     [CmdletBinding()]
     Param ([Parameter(Mandatory=$True, position=0)]          
-           [string]$Input)
+           [string]$Input,
+		   [Parameter(Mandatory=$False,HelpMessage="To return Bytes not String", position=1)]
+		   [Switch]$retbytes)
     END
     {       
         Set-StrictMode -Version Latest
@@ -146,12 +148,16 @@
         {
             $NTStatus = [BCrypt]::BCryptCloseAlgorithmProvider($PHAlgorithm, 0)
         }
-         
+        If(!$retBytes){
         $HashString = New-Object System.Text.StringBuilder
         Foreach ($Byte In $HashBytes)
         {
             [Void]$HashString.Append($Byte.ToString("X2"))
         }
         Return $HashString.ToString()
+		}
+		Else{
+		 Return $HashBytes
+		}
     }
 }
