@@ -2,8 +2,9 @@
  param(
 
  )
+ $Wordlist = "Path\to\password\components\textfile.txt"
  $rno = new-object "System.Byte[]" 5
- $wordparts = Get-content .\6words.txt
+ $wordparts = Get-content $wordlist
  $range = $wordparts.count
   
  do {
