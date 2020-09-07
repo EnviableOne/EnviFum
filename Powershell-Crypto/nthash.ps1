@@ -1,9 +1,12 @@
-﻿Param(
+Function MS-Hash{
+Param(
   [Parameter(Mandatory=$true)] [String] $String, 
   [ValidateSet("LM", "NTLM", "LM2", "NTLM2")] [String] $HashName = "LM",
-  [ValidateSet("Hex","B64")][String] $Outformat = "Hex"
+  [ValidateSet("Hex","B64")][String] $Outformat = "Hex",
+  [String]$User = $env:USERNAME,
+  [String]$domain = $env:USERDOMAIN
  )
- import-module "c:\msrc\md4.ps1"
+ import-module "c:\envifun\crypto\Get-md4Hash.ps1"
  Function LM-hash {
 Param(
  [Parameter(mandatory=$true,ValueFromPipeline=$true,position=0)][ValidateLength(7,7)][string]$Invalue
@@ -37,11 +40,31 @@ foreach($byte in $inBytes){
  # Dispose of the encryptor
  $enc.Dispose()
 }
+ Function NT-Hash {
+ param(
+  [Parameter(mandatory=$true,ValueFromPipeline=$true,position=0)][string]$Invalue,
+  [switch]$RetString
+)
+$enc = [system.Text.UnicodeEncoding]::New($false,$false)
+$text = $enc.GetBytes($String) 
+$data1 = Get-MD4Hash $text -retbytes
+if ($RetString){
+ $HashString = New-Object System.Text.StringBuilder
+ Foreach ($Byte In $data1)
+ {
+     [Void]$HashString.Append($Byte.ToString("X2"))
+ }
+ Return $HashString.ToString()
+}
+Else {
+ Return $data1
+ }
+}
 
   Switch ($HashName) {
  "LM"{
     If ($string.Length -gt 14){
-	    Throw "TerminatingError - LM Hash does not support clear test greater than 14 chars"
+	    Throw "TerminatingError - LM Hash does not support clear text greater than 14 chars"
     }
     Else {
      $string=$string.PadRight(14,$null).ToUpper()
@@ -53,12 +76,21 @@ foreach($byte in $inBytes){
     $data= $data1 + $data2
  }
  "NTLM" {
-    $enc = [system.Text.UnicodeEncoding]::New($false,$false)
-    $text = $enc.GetBytes($String) 
-    $data1 = MD4Hash $text
+    $data = NT-Hash $String -RetString
 }
+ "NTLM2" {
+  #HMAC_MD5(MD4(UNICODE16LE(Passwd)), UNICODE16LE(Concat(Upper(User), UserDom)))
+    $enc = [system.Text.UnicodeEncoding]::New($false,$false)
+    $part1 = NT-Hash $string
+    $part2 = $enc.GetBytes(($User.ToUpper()+$domain))
+    $tohash = $part1 + $part2
+    $hasher = [System.Security.Cryptography.HMACMD5]::new()
+    $byteresult = $hasher.ComputeHash($tohash)
+    $data = $enc.GetString($byteresult)
+ }
  default {
     $data= "algorithm not implemented"
  }
 }
 return $data
+}
